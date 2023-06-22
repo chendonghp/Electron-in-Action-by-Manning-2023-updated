@@ -1,3 +1,4 @@
+//@ts-check
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
@@ -6,8 +7,8 @@ const createDOMPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
 
 
-const getFileFromUser = (exports.getFileFromUser = async () => {
-    const { canceled, filePaths } = await dialog.showOpenDialog({
+const getFileFromUser =  async (win) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(win,{
         properties: ["openFile"],
         filters: [
             { name: "Markdown Files", extensions: ["md", "markdown"] },
@@ -16,10 +17,10 @@ const getFileFromUser = (exports.getFileFromUser = async () => {
     });
     if (!canceled) {
         const file = filePaths[0];
-        content = openFile(file);
+        const content = openFile(file);
         return content;
     }
-});
+};
 
 const openFile = (file) => {
     const content = fs.readFileSync(file).toString();
@@ -27,7 +28,15 @@ const openFile = (file) => {
 };
 
 function createWindow() {
-    const mainWindow = new BrowserWindow({
+    let x, y;
+    const currentWindow = BrowserWindow.getFocusedWindow();
+    if(currentWindow) {
+        const [currentWindowX, currentWindowY] = currentWindow.getPosition();
+        x = currentWindowX +10;
+        y = currentWindowY +10;
+    }
+    let mainWindow = new BrowserWindow({
+        x,y,
         width: 800,
         height: 600,
         show: false,
@@ -38,10 +47,19 @@ function createWindow() {
 
     mainWindow.loadFile(path.join(__dirname, "index.html"));
 
+    mainWindow.on('closed', () => {
+        windows.delete(mainWindow);
+        mainWindow.destroy();
+    });
+
     mainWindow.once("ready-to-show", () => {
         mainWindow.show();
     });
+    windows.add(mainWindow);
+    return mainWindow;
 }
+
+const windows = new Set();
 
 app.whenReady().then(() => {
     ipcMain.handle("parse-markdown", (event, markdown) => {
@@ -51,17 +69,22 @@ app.whenReady().then(() => {
         const options = { mangle: false, headerIds: false };
         return DOMPurify.sanitize(marked.parse(markdown, options));
     });
-    // ipcMain.on('get-file-from-user', (event) => {
-    ipcMain.handle("get-file-from-user", (event) => {
-        return getFileFromUser();
-    });
-    createWindow();
 
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
+    ipcMain.handle("get-file-from-user", (event) => {
+        const webContents = event.sender
+        const win = BrowserWindow.fromWebContents(webContents)
+        return getFileFromUser(win);
     });
+
+    ipcMain.on('create-window', (event) => {createWindow()});
+
+    createWindow();
+});
+
+app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+        createWindow();
+    }
 });
 
 app.on("window-all-closed", () => {
