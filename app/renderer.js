@@ -8,6 +8,7 @@ const saveHtmlButton = document.querySelector("#save-html");
 const showFileButton = document.querySelector("#show-file");
 const openInDefaultButton = document.querySelector("#open-in-default");
 
+
 const renderMarkdownToHtml = async (markdown) => {
     htmlView.innerHTML = await window.api.parseMarkdown(markdown);
 };
@@ -18,9 +19,14 @@ markdownView.addEventListener("keyup", (event) => {
 });
 
 openFileButton.addEventListener("click", async () => {
-    content = await window.api.getFileFromUser();
+    let filePath = null;
+    let originalContent = '';
+    [file, content] = await window.api.getFileFromUser();
+    filePath = file;
+    originalContent = content;
     markdownView.value = content;
     renderMarkdownToHtml(content);
+    window.api.updateUserInterface(filePath);
 });
 
 newFileButton.addEventListener("click", () => {

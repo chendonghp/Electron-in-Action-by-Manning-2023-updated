@@ -1,4 +1,3 @@
-//@ts-check
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const fs = require("fs");
 const path = require("path");
@@ -18,7 +17,7 @@ const getFileFromUser =  async (win) => {
     if (!canceled) {
         const file = filePaths[0];
         const content = openFile(file);
-        return content;
+        return [file, content];
     }
 };
 
@@ -77,6 +76,13 @@ app.whenReady().then(() => {
     });
 
     ipcMain.on('create-window', (event) => {createWindow()});
+    ipcMain.on('update-user-interface', (e, filePath) => {
+        const webContents = e.sender;
+        const win = BrowserWindow.fromWebContents(webContents);
+        let title = 'Fire Sale';
+        if (filePath) { title = `${path.basename(filePath)} - ${title}`; }
+        win.setTitle(title);
+    })
 
     createWindow();
 });
