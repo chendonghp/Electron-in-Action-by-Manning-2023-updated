@@ -1,8 +1,3 @@
-const marked = require('marked');
-const createDOMPurify = require('dompurify');
-
-const DOMPurity = createDOMPurify();
-
 const markdownView = document.querySelector('#markdown');
 const htmlView = document.querySelector('#html');
 const newFileButton = document.querySelector('#new-file');
@@ -13,12 +8,18 @@ const saveHtmlButton = document.querySelector('#save-html');
 const showFileButton = document.querySelector('#show-file');
 const openInDefaultButton = document.querySelector('#open-in-default');
 
-const renderMarkdownToHtml = (markdown) => {
-    htmlView.innerHTML =  marked.parse(markdown, { sanitizer: DOMPurity.sanitize });
-};
-
+const renderMarkdownToHtml = async (markdown) => {
+    htmlView.innerHTML = await window.api.parseMarkdown(markdown);
+}
 
 markdownView.addEventListener('keyup', (event) => {
     const currentContent = event.target.value;
     renderMarkdownToHtml(currentContent);
+});
+
+
+openFileButton.addEventListener('click', async () => {
+    content = await window.api.getFileFromUser();
+    markdownView.value = content;
+    renderMarkdownToHtml(content);
 });
