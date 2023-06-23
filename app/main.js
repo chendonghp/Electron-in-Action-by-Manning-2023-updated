@@ -6,8 +6,8 @@ const createDOMPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
 
 
-const getFileFromUser =  async (win) => {
-    const { canceled, filePaths } = await dialog.showOpenDialog(win,{
+const getFileFromUser = async (win) => {
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
         filters: [
             { name: "Markdown Files", extensions: ["md", "markdown"] },
@@ -17,11 +17,13 @@ const getFileFromUser =  async (win) => {
     if (!canceled) {
         const file = filePaths[0];
         const content = openFile(file);
+        win.setRepresentedFilename(file);
         return [file, content];
     }
 };
 
 const openFile = (file) => {
+    app.addRecentDocument(file);
     const content = fs.readFileSync(file).toString();
     return content;
 };
@@ -29,13 +31,13 @@ const openFile = (file) => {
 function createWindow() {
     let x, y;
     const currentWindow = BrowserWindow.getFocusedWindow();
-    if(currentWindow) {
+    if (currentWindow) {
         const [currentWindowX, currentWindowY] = currentWindow.getPosition();
-        x = currentWindowX +10;
-        y = currentWindowY +10;
+        x = currentWindowX + 10;
+        y = currentWindowY + 10;
     }
     let mainWindow = new BrowserWindow({
-        x,y,
+        x, y,
         width: 800,
         height: 600,
         show: false,
@@ -58,6 +60,20 @@ function createWindow() {
     return mainWindow;
 }
 
+const saveHtml = async (win, content) => {
+    // showSaveDialog api changed: https://www.electronjs.org/docs/latest/api/dialog#dialogshowsavedialogbrowserwindow-options
+    const file = await dialog.showSaveDialog(win,{
+        title: 'Save Html',
+        defaultPath: app.getPath('documents'),
+        filters: [
+            { name: 'HTML Files', extensions: ['html', 'htm'] }
+        ]
+    });
+    
+    if (file.canceled) return 
+    fs.writeFileSync(file.filePath, content)
+}
+
 const windows = new Set();
 
 app.whenReady().then(() => {
@@ -75,16 +91,19 @@ app.whenReady().then(() => {
         return getFileFromUser(win);
     });
 
-    ipcMain.on('create-window', (event) => {createWindow()});
-    ipcMain.on('update-user-interface', (e, filePath) => {
+    ipcMain.on('create-window', (event) => { createWindow() });
+    ipcMain.on('update-user-interface', (e, filePath, isEdited = false) => {
         const webContents = e.sender;
         const win = BrowserWindow.fromWebContents(webContents);
         let title = 'Fire Sale';
         if (filePath) { title = `${path.basename(filePath)} - ${title}`; }
+        if (isEdited) { title = `${title} (Edited)`; }
         win.setTitle(title);
+        win.setDocumentEdited(isEdited);
     })
 
-    createWindow();
+    const win = createWindow();
+    ipcMain.on('save-html', (e, content) => {saveHtml(win, content)});
 });
 
 app.on("activate", () => {
@@ -98,3 +117,14 @@ app.on("window-all-closed", () => {
         app.quit();
     }
 });
+
+app.on('will-finish-launching', () => {
+    // "open-file" is Mac only event, it's not work in windows
+    app.on('open-file', (event, file) => {
+        const win = createWindow();
+        win.once('ready-to-show', () => {
+            content = openFile(file);
+            win.webContents.send('content', content)
+        });
+    });
+})

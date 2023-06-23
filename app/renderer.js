@@ -8,6 +8,8 @@ const saveHtmlButton = document.querySelector("#save-html");
 const showFileButton = document.querySelector("#show-file");
 const openInDefaultButton = document.querySelector("#open-in-default");
 
+let filePath = null;
+let originalContent = '';
 
 const renderMarkdownToHtml = async (markdown) => {
     htmlView.innerHTML = await window.api.parseMarkdown(markdown);
@@ -16,11 +18,13 @@ const renderMarkdownToHtml = async (markdown) => {
 markdownView.addEventListener("keyup", (event) => {
     const currentContent = event.target.value;
     renderMarkdownToHtml(currentContent);
+    isEdited = (currentContent !== originalContent)
+    window.api.updateUserInterface(filePath, isEdited);
+    saveMarkdownButton.disabled = !isEdited;
+    revertButton.disabled = !isEdited;  
 });
 
 openFileButton.addEventListener("click", async () => {
-    let filePath = null;
-    let originalContent = '';
     [file, content] = await window.api.getFileFromUser();
     filePath = file;
     originalContent = content;
@@ -32,3 +36,12 @@ openFileButton.addEventListener("click", async () => {
 newFileButton.addEventListener("click", () => {
     window.api.createWindow();
 });
+
+window.api.handleContent((e, content) =>{
+    markdownView.value = content;
+    renderMarkdownToHtml(content);
+})
+
+saveHtmlButton.addEventListener("click", ()=>{
+    window.api.saveHtml(htmlView.innerHTML)
+})
