@@ -30,7 +30,7 @@ openFileButton.addEventListener("click", async () => {
     originalContent = content;
     markdownView.value = content;
     renderMarkdownToHtml(content);
-    window.api.updateUserInterface(filePath);
+    window.api.updateUserInterface(filePath, false);
 });
 
 newFileButton.addEventListener("click", () => {
@@ -107,3 +107,25 @@ markdownView.addEventListener('drop', async (event) => {
     markdownView.classList.remove('drag-over');
     markdownView.classList.remove('drag-error');
 });
+
+const isDifferentContent = (content) => content !== markdownView.value;
+
+const renderFile = (file, content) => {
+    isEdited = false
+    filePath = file;
+    originalContent = content;
+
+    markdownView.value = content;
+    renderMarkdownToHtml(content);
+    window.api.updateUserInterface(filePath, isEdited);
+
+    saveMarkdownButton.disabled = !isEdited;
+    revertButton.disabled = !isEdited;
+};
+
+window.api.checkContent((event, content) => {
+    event.sender.send("is-content-different", isDifferentContent(content))
+})
+window.api.changeContent((event, file, content) => {
+    renderFile(file, content);
+})
