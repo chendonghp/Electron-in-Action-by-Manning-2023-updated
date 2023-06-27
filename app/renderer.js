@@ -21,7 +21,7 @@ markdownView.addEventListener("keyup", (event) => {
     isEdited = (currentContent !== originalContent)
     window.api.updateUserInterface(filePath, isEdited);
     saveMarkdownButton.disabled = !isEdited;
-    revertButton.disabled = !isEdited;  
+    revertButton.disabled = !isEdited;
 });
 
 openFileButton.addEventListener("click", async () => {
@@ -37,11 +37,73 @@ newFileButton.addEventListener("click", () => {
     window.api.createWindow();
 });
 
-window.api.handleContent((e, content) =>{
+window.api.handleContent((e, content) => {
     markdownView.value = content;
     renderMarkdownToHtml(content);
 })
 
-saveHtmlButton.addEventListener("click", ()=>{
+saveHtmlButton.addEventListener("click", () => {
     window.api.saveHtml(htmlView.innerHTML)
 })
+
+saveMarkdownButton.addEventListener('click', () => {
+    window.api.saveMarkdown(filePath, markdownView.value);
+});
+
+revertButton.addEventListener('click', () => {
+    markdownView.value = originalContent;
+    renderMarkdownToHtml(originalContent);
+});
+
+
+const supportedDropFile = (file) => {
+    return file.type ?
+        ['text/plain', 'text/markdown'].includes(file.type) :
+        /\.(md|markdown|txt)$/i.test(file.path);
+};
+
+// const supportedDragoverItem = (file) => {
+//     // return ['text/plain', 'text/markdown'].includes(file.type);
+//     return file.type ?
+//         ['text/plain', 'text/markdown'].includes(file.type) :
+//         /\.(md|markdown|txt)$/i.test(file.name);
+// }
+
+document.addEventListener('dragenter', event => { event.preventDefault(); event.stopPropagation() });
+document.addEventListener('dragover', event => { event.preventDefault(); event.stopPropagation() });
+document.addEventListener('dragleave', event => { event.preventDefault(); event.stopPropagation() });
+document.addEventListener('drop', event => { event.preventDefault(); event.stopPropagation() });
+
+
+markdownView.addEventListener('dragover',
+    (event) => {
+        // https://github.com/electron/electron/issues/9840 can't get file info before file droped
+        // const file = event.dataTransfer.files[0];
+        // try {
+        //     if (supportedDragoverItem(file)) {
+        //         markdownView.classList.add('drag-over');
+        //     } else {
+        //         markdownView.classList.add('drag-error');
+        //     }
+        // } catch (error) { console.log(error) }
+    });
+
+markdownView.addEventListener('dragleave', () => {
+    markdownView.classList.remove('drag-over');
+    markdownView.classList.remove('drag-error');
+});
+
+markdownView.addEventListener('drop', async (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const file = event.dataTransfer.files[0];
+    if (supportedDropFile(file)) {
+        const content = await window.api.openFile(file.path)
+        markdownView.value = content;
+        renderMarkdownToHtml(content)
+    } else {
+        alert('That file type is not supported');
+    }
+    markdownView.classList.remove('drag-over');
+    markdownView.classList.remove('drag-error');
+});

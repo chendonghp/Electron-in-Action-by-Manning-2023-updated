@@ -7,5 +7,7 @@ contextBridge.exposeInMainWorld('api', {
     createWindow: () => ipcRenderer.send("create-window"),
     updateUserInterface: (filePath, isEdited) => ipcRenderer.send("update-user-interface", filePath, isEdited),
     handleContent: (callback) => {ipcRenderer.on('content', callback)},
-    saveHtml: (content) => {ipcRenderer.send('save-html', content)}
+    saveHtml: (content) => {ipcRenderer.send('save-html', content)},
+    saveMarkdown: (filePath, content) => {ipcRenderer.send('save-markdown', filePath, content)},
+    openFile: (file) => ipcRenderer.invoke("open-file", file)
 });

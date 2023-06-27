@@ -4,6 +4,8 @@ const path = require("path");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
+const { resolve } = require("path");
+const { rejects } = require("assert");
 
 
 const getFileFromUser = async (win) => {
@@ -22,11 +24,22 @@ const getFileFromUser = async (win) => {
     }
 };
 
-const openFile = (file) => {
-    app.addRecentDocument(file);
-    const content = fs.readFileSync(file).toString();
-    return content;
+const openFile = async (file) => {
+    try {
+        const content = await fs.promises.readFile(file, "utf-8");
+        app.addRecentDocument(file);
+        return content.toString();
+    } catch (error) {
+        console.error(error);
+        return null;
+    }
 };
+// return new Promise((resolve, reject) => {
+//     app.addRecentDocument(file);
+//     const content = fs.readFileSync(file).toString()
+//     resolve(content);
+// })
+// };
 
 function createWindow() {
     let x, y;
@@ -62,17 +75,32 @@ function createWindow() {
 
 const saveHtml = async (win, content) => {
     // showSaveDialog api changed: https://www.electronjs.org/docs/latest/api/dialog#dialogshowsavedialogbrowserwindow-options
-    const file = await dialog.showSaveDialog(win,{
+    const file = await dialog.showSaveDialog(win, {
         title: 'Save Html',
         defaultPath: app.getPath('documents'),
         filters: [
             { name: 'HTML Files', extensions: ['html', 'htm'] }
         ]
     });
-    
-    if (file.canceled) return 
+
+    if (file.canceled) return
     fs.writeFileSync(file.filePath, content)
 }
+
+const saveMarkdown = async (win, file, content) => {
+    if (!file) {
+        file = await dialog.showSaveDialog(win, {
+            title: 'Save Markdown',
+            defaultPath: app.getPath('documents'),
+            filters: [
+                { name: 'Markdown Files', extensions: ['md', 'markdown'] }
+            ]
+        });
+
+    } if (file.canceled) return;
+    fs.writeFileSync(file.filePath, content);
+    return openFile(file.filePath);
+};
 
 const windows = new Set();
 
@@ -101,9 +129,20 @@ app.whenReady().then(() => {
         win.setTitle(title);
         win.setDocumentEdited(isEdited);
     })
+    ipcMain.handle('open-file', async (event, file) => {
+        try {
+            const content = await openFile(file);
+            console.log('handle: ' + content); // Testing
+            return content;
+        } catch (error) {
+            console.log('handle error: ' + error); // Testing
+            return 'Error Loading Log File';
+        }
+    })
 
     const win = createWindow();
-    ipcMain.on('save-html', (e, content) => {saveHtml(win, content)});
+    ipcMain.on('save-html', (e, content) => { saveHtml(win, content) });
+    ipcMain.on('save-markdown', (e, filePath, content) => saveMarkdown(win, filePath, content))
 });
 
 app.on("activate", () => {
