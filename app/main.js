@@ -1,14 +1,13 @@
-const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
 const { JSDOM } = require("jsdom");
-const { resolve } = require("path");
-const { rejects } = require("assert");
+const applicationMenu = require('./application-menu');
 
 
-const getFileFromUser = async (win) => {
+const getFileFromUser = exports.getFileFromUser = async (win) => {
     const { canceled, filePaths } = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
         filters: [
@@ -52,7 +51,7 @@ const openFile = async (currentWindow, file) => {
 };
 
 
-function createWindow() {
+const createWindow = exports.createWindow = () => {
     let x, y;
     const currentWindow = BrowserWindow.getFocusedWindow();
     if (currentWindow) {
@@ -115,7 +114,7 @@ const saveHtml = async (win, content) => {
         ]
     });
 
-    if (file.canceled) return
+    if (file.canceled) return;
     fs.writeFileSync(file.filePath, content)
 }
 
@@ -137,6 +136,7 @@ const saveMarkdown = async (win, file, content) => {
 const windows = new Set();
 
 app.whenReady().then(() => {
+    Menu.setApplicationMenu(applicationMenu);
     ipcMain.handle("parse-markdown", (event, markdown) => {
         // refer https://github.com/cure53/DOMPurify
         const window = new JSDOM("").window;
@@ -247,4 +247,6 @@ const stopWatchingFile = (targetWindow) => {
         openFiles.delete(targetWindow);
     }
 };
+
+// module.exports = {getFileFromUser, createWindow}
 

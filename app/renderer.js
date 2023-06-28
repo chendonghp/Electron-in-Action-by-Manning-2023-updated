@@ -129,3 +129,11 @@ window.api.checkContent((event, content) => {
 window.api.changeContent((event, file, content) => {
     renderFile(file, content);
 })
+
+window.api.saveHtmlMenu(()=>{
+    window.api.saveHtml(htmlView.innerHTML)
+})
+
+window.api.saveMarkdownMenu(() => {
+    window.api.saveMarkdown(filePath,markdownView.value)
+})
