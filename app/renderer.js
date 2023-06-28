@@ -137,3 +137,8 @@ window.api.saveHtmlMenu(()=>{
 window.api.saveMarkdownMenu(() => {
     window.api.saveMarkdown(filePath,markdownView.value)
 })
+
+markdownView.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    window.api.MarkdownContextMenu()
+})

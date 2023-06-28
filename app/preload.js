@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('api', {
     saveMarkdownMenu:(callback) => {ipcRenderer.on('save-markdown-menu', callback)},
     openFile: (file) => ipcRenderer.invoke("open-file", file),
     checkContent: (callback) => ipcRenderer.on('latest-content', callback),
-    changeContent: (callback) => ipcRenderer.on('file-changed', callback)
+    changeContent: (callback) => ipcRenderer.on('file-changed', callback),
+    MarkdownContextMenu: () => ipcRenderer.send('markdown-context-menu')
 });
 

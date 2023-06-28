@@ -1,18 +1,18 @@
-const { app, BrowserWindow, dialog, ipcMain, Menu } = require("electron");
+const {app, BrowserWindow, dialog, ipcMain, Menu} = require("electron");
 const fs = require("fs");
 const path = require("path");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
-const { JSDOM } = require("jsdom");
+const {JSDOM} = require("jsdom");
 const applicationMenu = require('./application-menu');
 
 
 const getFileFromUser = exports.getFileFromUser = async (win) => {
-    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+    const {canceled, filePaths} = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
         filters: [
-            { name: "Markdown Files", extensions: ["md", "markdown"] },
-            { name: "Text Files", extensions: ["txt"] },
+            {name: "Markdown Files", extensions: ["md", "markdown"]},
+            {name: "Text Files", extensions: ["txt"]},
         ],
     });
     if (!canceled) {
@@ -43,7 +43,9 @@ const openFile = async (currentWindow, file) => {
             defaultId: 0,
             cancelId: 1,
         });
-        if (result === 1) { return; }
+        if (result === 1) {
+            return;
+        }
     }
     app.addRecentDocument(file);
     startWatchingFile(currentWindow, file);
@@ -110,7 +112,7 @@ const saveHtml = async (win, content) => {
         title: 'Save Html',
         defaultPath: app.getPath('documents'),
         filters: [
-            { name: 'HTML Files', extensions: ['html', 'htm'] }
+            {name: 'HTML Files', extensions: ['html', 'htm']}
         ]
     });
 
@@ -124,11 +126,12 @@ const saveMarkdown = async (win, file, content) => {
             title: 'Save Markdown',
             defaultPath: app.getPath('documents'),
             filters: [
-                { name: 'Markdown Files', extensions: ['md', 'markdown'] }
+                {name: 'Markdown Files', extensions: ['md', 'markdown']}
             ]
         });
 
-    } if (file.canceled) return;
+    }
+    if (file.canceled) return;
     fs.writeFileSync(file.filePath, content);
     return openFile(win, file.filePath);
 };
@@ -137,11 +140,12 @@ const windows = new Set();
 
 app.whenReady().then(() => {
     Menu.setApplicationMenu(applicationMenu);
+
     ipcMain.handle("parse-markdown", (event, markdown) => {
         // refer https://github.com/cure53/DOMPurify
         const window = new JSDOM("").window;
         const DOMPurify = createDOMPurify(window);
-        const options = { mangle: false, headerIds: false };
+        const options = {mangle: false, headerIds: false};
         return DOMPurify.sanitize(marked.parse(markdown, options));
     });
 
@@ -151,13 +155,19 @@ app.whenReady().then(() => {
         return await getFileFromUser(win);
     });
 
-    ipcMain.on('create-window', (event) => { createWindow() });
+    ipcMain.on('create-window', (event) => {
+        createWindow()
+    });
     ipcMain.on('update-user-interface', (e, filePath, isEdited = false) => {
         const webContents = e.sender;
         const win = BrowserWindow.fromWebContents(webContents);
         let title = 'Fire Sale';
-        if (filePath) { title = `${path.basename(filePath)} - ${title}`; }
-        if (isEdited) { title = `${title} (Edited)`; }
+        if (filePath) {
+            title = `${path.basename(filePath)} - ${title}`;
+        }
+        if (isEdited) {
+            title = `${title} (Edited)`;
+        }
         win.setTitle(title);
         win.setDocumentEdited(isEdited);
     })
@@ -188,10 +198,11 @@ app.whenReady().then(() => {
             return 'Error Loading Log File';
         }
     })
-    ipcMain.on('save-html', (e, content) => { saveHtml(win, content) });
+    ipcMain.on('save-html', (e, content) => {
+        saveHtml(win, content)
+    });
     ipcMain.on('save-markdown', (e, filePath, content) => saveMarkdown(win, filePath, content))
 });
-
 
 
 app.on("activate", () => {
@@ -248,5 +259,19 @@ const stopWatchingFile = (targetWindow) => {
     }
 };
 
-// module.exports = {getFileFromUser, createWindow}
+const markdownContextMenu = Menu.buildFromTemplate([
+    {
+        label: 'Open File', click() {
+            getFileFromUser();
+        }
+    },
+    {type: 'separator'},
+    {label: 'Cut', role: 'cut'},
+    {label: 'Copy', role: 'copy'},
+    {label: 'Paste', role: 'paste'},
+    {label: 'Select All', role: 'selectall'},
+]);
+
+ipcMain.on('markdown-context-menu', () => markdownContextMenu.popup())
+
 
