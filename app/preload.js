@@ -1,5 +1,4 @@
-const { contextBridge, ipcRenderer } = require('electron')
-
+const { contextBridge, ipcRenderer} = require('electron')
 
 contextBridge.exposeInMainWorld('api', {
     getFileFromUser: () => ipcRenderer.invoke("get-file-from-user"),
@@ -14,6 +13,10 @@ contextBridge.exposeInMainWorld('api', {
     openFile: (file) => ipcRenderer.invoke("open-file", file),
     checkContent: (callback) => ipcRenderer.on('latest-content', callback),
     changeContent: (callback) => ipcRenderer.on('file-changed', callback),
-    MarkdownContextMenu: () => ipcRenderer.send('markdown-context-menu')
+    MarkdownContextMenu: (filePath) => ipcRenderer.send('markdown-context-menu', filePath),
+    showItemInFolder: (path) => ipcRenderer.send('show-item-in-folder', path),
+    openPath: (path) => ipcRenderer.send('open-path', path),
+    showItemInFolderMenu: (callback) => ipcRenderer.on('show-file', callback),
+    openPathMenu: (callback) => ipcRenderer.on('open-in-default', callback)
 });
 

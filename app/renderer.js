@@ -28,8 +28,9 @@ openFileButton.addEventListener("click", async () => {
     [file, content] = await window.api.getFileFromUser();
     filePath = file;
     originalContent = content;
-    markdownView.value = content;
-    renderMarkdownToHtml(content);
+    // markdownView.value = content;
+    // renderMarkdownToHtml(content);
+    renderFile(file, content)
     window.api.updateUserInterface(filePath, false);
 });
 
@@ -38,8 +39,7 @@ newFileButton.addEventListener("click", () => {
 });
 
 window.api.handleContent((e, content) => {
-    markdownView.value = content;
-    renderMarkdownToHtml(content);
+    renderFile(filePath, content)
 })
 
 saveHtmlButton.addEventListener("click", () => {
@@ -51,8 +51,7 @@ saveMarkdownButton.addEventListener('click', () => {
 });
 
 revertButton.addEventListener('click', () => {
-    markdownView.value = originalContent;
-    renderMarkdownToHtml(originalContent);
+    renderFile(filePath, originalContent)
 });
 
 
@@ -61,13 +60,6 @@ const supportedDropFile = (file) => {
         ['text/plain', 'text/markdown'].includes(file.type) :
         /\.(md|markdown|txt)$/i.test(file.path);
 };
-
-// const supportedDragoverItem = (file) => {
-//     // return ['text/plain', 'text/markdown'].includes(file.type);
-//     return file.type ?
-//         ['text/plain', 'text/markdown'].includes(file.type) :
-//         /\.(md|markdown|txt)$/i.test(file.name);
-// }
 
 document.addEventListener('dragenter', event => { event.preventDefault(); event.stopPropagation() });
 document.addEventListener('dragover', event => { event.preventDefault(); event.stopPropagation() });
@@ -99,8 +91,7 @@ markdownView.addEventListener('drop', async (event) => {
     const file = event.dataTransfer.files[0];
     if (supportedDropFile(file)) {
         const content = await window.api.openFile(file.path)
-        markdownView.value = content;
-        renderMarkdownToHtml(content)
+        renderFile(file, content)
     } else {
         alert('That file type is not supported');
     }
@@ -117,10 +108,13 @@ const renderFile = (file, content) => {
 
     markdownView.value = content;
     renderMarkdownToHtml(content);
-    window.api.updateUserInterface(filePath, isEdited);
 
     saveMarkdownButton.disabled = !isEdited;
     revertButton.disabled = !isEdited;
+
+    showFileButton.disabled = false;
+    openInDefaultButton.disabled = false;
+    window.api.updateUserInterface(filePath, isEdited);
 };
 
 window.api.checkContent((event, content) => {
@@ -140,5 +134,29 @@ window.api.saveMarkdownMenu(() => {
 
 markdownView.addEventListener('contextmenu', (event) => {
     event.preventDefault();
-    window.api.MarkdownContextMenu()
+    window.api.MarkdownContextMenu(filePath)
+})
+
+const showFile = () => {
+    if (!filePath) {
+        return alert('This file has not been saved to the filesystem.');
+    }
+    window.api.showItemInFolder(filePath);
+};
+const openInDefaultApplication = () => {
+    if (!filePath) {
+        return alert('This file has not been saved to the filesystem.');
+    }
+    window.api.openPath(filePath);
+};
+
+showFileButton.addEventListener('click', showFile);
+openInDefaultButton.addEventListener('click', openInDefaultApplication);
+
+window.api.showItemInFolderMenu((event) => {
+    showFile()
+})
+
+window.api.openPathMenu((event) => {
+    openInDefaultApplication()
 })

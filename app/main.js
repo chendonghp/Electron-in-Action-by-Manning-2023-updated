@@ -1,10 +1,10 @@
-const {app, BrowserWindow, dialog, ipcMain, Menu} = require("electron");
+const {app, BrowserWindow, dialog, ipcMain, Menu, shell} = require("electron");
 const fs = require("fs");
 const path = require("path");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
 const {JSDOM} = require("jsdom");
-const applicationMenu = require('./application-menu');
+const createApplicationMenu = require('./application-menu');
 
 
 const getFileFromUser = exports.getFileFromUser = async (win) => {
@@ -18,7 +18,6 @@ const getFileFromUser = exports.getFileFromUser = async (win) => {
     if (!canceled) {
         const file = filePaths[0];
         const content = await openFile(win, file);
-        win.setRepresentedFilename(file);
         return [file, content];
     }
 };
@@ -27,6 +26,8 @@ const openFile = async (currentWindow, file) => {
     // open new file, discard unsaved change
     const content = await fs.promises.readFile(file, "utf-8");
     let isContentDifferent = false
+    currentWindow.setRepresentedFilename(file);
+    console.log(`focused file: ${currentWindow.getRepresentedFilename()}`)
     currentWindow.webContents.send("latest-content", content)
     ipcMain.on("is-content-different", (event, value) => {
         isContentDifferent = value
@@ -49,6 +50,7 @@ const openFile = async (currentWindow, file) => {
     }
     app.addRecentDocument(file);
     startWatchingFile(currentWindow, file);
+    createApplicationMenu();
     return content;
 };
 
@@ -75,7 +77,8 @@ const createWindow = exports.createWindow = () => {
 
     mainWindow.on('closed', () => {
         windows.delete(mainWindow);
-        stopWatchingFile(mainWindow)
+        createApplicationMenu();
+        stopWatchingFile(mainWindow);
         mainWindow.destroy();
     });
 
@@ -98,7 +101,7 @@ const createWindow = exports.createWindow = () => {
             if (result === 0) mainWindow.destroy();
         }
     });
-
+    mainWindow.on('focus', createApplicationMenu);
     mainWindow.once("ready-to-show", () => {
         mainWindow.show();
     });
@@ -139,7 +142,6 @@ const saveMarkdown = async (win, file, content) => {
 const windows = new Set();
 
 app.whenReady().then(() => {
-    Menu.setApplicationMenu(applicationMenu);
 
     ipcMain.handle("parse-markdown", (event, markdown) => {
         // refer https://github.com/cure53/DOMPurify
@@ -188,15 +190,11 @@ app.whenReady().then(() => {
     })
 
     const win = createWindow();
+    createApplicationMenu();
+
     ipcMain.handle('open-file', async (event, file) => {
-        try {
             const content = await openFile(win, file);
-            console.log('handle: ' + content); // Testing
             return content;
-        } catch (error) {
-            console.log('handle error: ' + error); // Testing
-            return 'Error Loading Log File';
-        }
     })
     ipcMain.on('save-html', (e, content) => {
         saveHtml(win, content)
@@ -259,19 +257,58 @@ const stopWatchingFile = (targetWindow) => {
     }
 };
 
-const markdownContextMenu = Menu.buildFromTemplate([
+const createContextMenu = (filePath) => {
+    return  Menu.buildFromTemplate([
     {
         label: 'Open File', click() {
             getFileFromUser();
         }
+    },
+    {
+        label: 'Show File',
+        accelerator: 'Shift+CommandOrControl+S',
+        enabled: !!filePath,
+        click(item, focusedWindow) {
+            if (!focusedWindow) {
+                return dialog.showErrorBox(
+                    'Cannot Show File\'s Location',
+                    'There is currently no active document show.'
+                );
+            }
+            focusedWindow.webContents.send('show-file');
+        },
+    },
+    {
+        label: 'Open in Default Editor',
+        accelerator: 'Shift+CommandOrControl+S',
+        enabled: !!filePath,
+        click(item, focusedWindow) {
+            if (!focusedWindow) {
+                return dialog.showErrorBox(
+                    'Cannot Open File in Default Editor',
+                    'There is currently no active document to open.'
+                );
+            }
+            focusedWindow.webContents.send('open-in-default');
+        },
     },
     {type: 'separator'},
     {label: 'Cut', role: 'cut'},
     {label: 'Copy', role: 'copy'},
     {label: 'Paste', role: 'paste'},
     {label: 'Select All', role: 'selectall'},
-]);
+])};
 
-ipcMain.on('markdown-context-menu', () => markdownContextMenu.popup())
+ipcMain.on('markdown-context-menu', (event, filePath) => {
+    markdownContextMenu = createContextMenu(filePath)
+    markdownContextMenu.popup()
+})
 
+ipcMain.on('show-item-in-folder', (event, path) => {
+    shell.showItemInFolder(path)
+})
+
+ipcMain.on('open-path', (event, path) => {
+    shell.openPath(path)
+})
 
