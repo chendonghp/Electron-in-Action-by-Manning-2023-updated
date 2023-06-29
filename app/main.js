@@ -50,7 +50,7 @@ const openFile = async (currentWindow, file) => {
     }
     app.addRecentDocument(file);
     startWatchingFile(currentWindow, file);
-    createApplicationMenu();
+    createApplicationMenu(file);
     return content;
 };
 
@@ -101,7 +101,12 @@ const createWindow = exports.createWindow = () => {
             if (result === 0) mainWindow.destroy();
         }
     });
-    mainWindow.on('focus', createApplicationMenu);
+    mainWindow.on('focus', () => {
+        filename = null;
+        mainWindow.webContents.send("get-filename");
+        ipcMain.on('filename', (event, value) => {filename = value})
+        createApplicationMenu(filename)
+    });
     mainWindow.once("ready-to-show", () => {
         mainWindow.show();
     });

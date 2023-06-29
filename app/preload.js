@@ -17,6 +17,8 @@ contextBridge.exposeInMainWorld('api', {
     showItemInFolder: (path) => ipcRenderer.send('show-item-in-folder', path),
     openPath: (path) => ipcRenderer.send('open-path', path),
     showItemInFolderMenu: (callback) => ipcRenderer.on('show-file', callback),
-    openPathMenu: (callback) => ipcRenderer.on('open-in-default', callback)
+    openPathMenu: (callback) => ipcRenderer.on('open-in-default', callback),
+    openFileFromMenu: (callback) => ipcRenderer.on('open-file-from-menu', callback),
+    getFilename: (callback) => ipcRenderer.on('get-filename', callback)
 });
 

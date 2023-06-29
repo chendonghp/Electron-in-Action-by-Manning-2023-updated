@@ -1,19 +1,9 @@
 const { app, dialog, BrowserWindow, Menu, shell } = require("electron");
 const mainProcess = require("./main");
 
-const createApplicationMenu = () => {
+const createApplicationMenu = (filePath=null) => {
     const hasOneOrMoreWindows = !!BrowserWindow.getAllWindows().length;
-    const focusedWindow = BrowserWindow.getFocusedWindow();
-    const hasFilePath = !!(
-        focusedWindow && focusedWindow.getRepresentedFilename()
-    );
-    console.log(
-        `hasOneOrMoreWindows: ${
-            BrowserWindow.getAllWindows().length
-        } ${hasOneOrMoreWindows}\n`,
-        `focusedWindow: ${focusedWindow}\n`,
-        `hasFilePath: ${hasFilePath}`
-    );
+    const hasFilePath = !! filePath;
 
     const template = [
         {
@@ -31,13 +21,15 @@ const createApplicationMenu = () => {
                     accelerator: "CommandOrControl+O",
                     click(item, focusedWindow) {
                         if (focusedWindow) {
-                            return mainProcess.getFileFromUser(focusedWindow);
-                        } 
-                        const newWindow = mainProcess.createWindow();
-                        newWindow.on("show", () => {
-                            mainProcess.getFileFromUser(newWindow);
-                        });
-                        
+                            // return mainProcess.getFileFromUser(focusedWindow);
+                            focusedWindow.webContents.send("open-file-from-menu");
+                        } else{
+                            const newWindow = mainProcess.createWindow();
+                            newWindow.on("show", () => {
+                                // mainProcess.getFileFromUser(newWindow);
+                                newWindow.webContents.send("open-file-from-menu");
+                            });
+                        }                  
                     },
                 },
                 {

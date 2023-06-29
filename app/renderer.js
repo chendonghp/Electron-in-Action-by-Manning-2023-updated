@@ -24,15 +24,21 @@ markdownView.addEventListener("keyup", (event) => {
     revertButton.disabled = !isEdited;
 });
 
-openFileButton.addEventListener("click", async () => {
+const openFile = async() => {
     [file, content] = await window.api.getFileFromUser();
     filePath = file;
     originalContent = content;
-    // markdownView.value = content;
-    // renderMarkdownToHtml(content);
     renderFile(file, content)
     window.api.updateUserInterface(filePath, false);
-});
+}
+
+openFileButton.addEventListener("click", openFile);
+
+window.api.openFileFromMenu(async (event) => await openFile())
+
+window.api.getFilename((event)=>{
+    event.sender.send('filename', filePath)
+})
 
 newFileButton.addEventListener("click", () => {
     window.api.createWindow();
