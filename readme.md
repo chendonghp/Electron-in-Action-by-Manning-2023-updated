@@ -1,4 +1,7 @@
 ![](book.jpg)
+
+firesale code in firesale folder, and other app follow the rule.
+
 This repository contains 2023 updated code for **Electron in Action**, written by **Steve Kinney** and published by **Manning** in **2018**. It is a byproduct of my experience with the book(not finished), where I found that most of the code could not run on the latest version of Electron.
 
 I will adapt the code to my dev configuration, which uses node~=18 and Electron~=25.

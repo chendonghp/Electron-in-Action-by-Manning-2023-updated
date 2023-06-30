@@ -21,12 +21,10 @@ const createApplicationMenu = (filePath=null) => {
                     accelerator: "CommandOrControl+O",
                     click(item, focusedWindow) {
                         if (focusedWindow) {
-                            // return mainProcess.getFileFromUser(focusedWindow);
                             focusedWindow.webContents.send("open-file-from-menu");
                         } else{
                             const newWindow = mainProcess.createWindow();
                             newWindow.on("show", () => {
-                                // mainProcess.getFileFromUser(newWindow);
                                 newWindow.webContents.send("open-file-from-menu");
                             });
                         }                  
