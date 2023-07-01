@@ -1,5 +1,6 @@
 const path = require("path");
 const clipboardListener = require("clipboard-event");
+const { getSelectedText, registerShortcut } = require("electron-selected-text");
 
 const {
     app,
@@ -61,6 +62,10 @@ const createClippingMenuItem = (clipping, index) => {
     };
 };
 
+const printSelectedText = (selectedText) => {
+    console.log(`Selected Text: ${selectedText}`);
+};
+
 app.whenReady().then(() => {
     if (app.dock) app.dock.hide();
     clipboardListener.startListening();
@@ -71,8 +76,10 @@ app.whenReady().then(() => {
                 "show-notification",
                 "Clipping Added",
                 clipping
-            )};
+            );
+        }
     });
+    getSelectedText().then(printSelectedText);
     browserWindow = new BrowserWindow({
         show: false,
         webPreferences: {
@@ -88,7 +95,6 @@ app.whenReady().then(() => {
     const activationShortcut = globalShortcut.register("Shift+C", () => {
         tray.popUpContextMenu();
     });
-
 
     if (!activationShortcut) {
         console.error("Global activation shortcut failed to register");
