@@ -1,10 +1,12 @@
 import React from "react";
 
-const Item = ({ packed, _id, value, onCheckOff }) => {
+const Item = ({ packed, _id, value, onCheckOff, onDelete }) => {
   return (
     <article className="Item">
-      <input type="checkbox" checked={packed} onChange={onCheckOff} id={_id} />
-      <label>{value}</label>
+     
+      <label> <input type="checkbox" checked={packed} onChange={onCheckOff} id={_id} />
+      {value}</label>
+        <button className="delete" onClick={onDelete}>Delete</button>
     </article>
   );
 };
