@@ -1,51 +1,88 @@
-import React, { useState } from 'react';
-import Items from './Items';
-import NewItem from './NewItem';
-import { render } from 'react-dom';
+import React, {useState, useEffect} from "react";
+import Items from "./Items";
+import NewItem from "./NewItem";
+import {createRoot} from "react-dom/client";
+// import {window} from 'electron'
+
 
 const Application = () => {
-  const [items, setItems] = useState([{ value: 'Pants', id: Date.now(), packed: false }]);
+    const [items, setItems] = useState([]);
 
-  const addItem = (item) => {
-    setItems([item, ...items]);
-  }
+    useEffect(() => {
+        fetchItems();
+    }, []);
 
-  const markAsPacked = (item) => {
-    const otherItems = items.filter(other => other.id !== item.id);
-    const updatedItem = { ...item, packed: !item.packed };
-    setItems([updatedItem, ...otherItems]);
-  }
+    async function fetchItems() {
+        const database = await window.api.getDatabase()
+        setItems(database);
+    }
 
-  const markAllAsUnpacked = () => {
-    const newItems = items.map(item => ({ ...item, packed: false }));
-    setItems(newItems);
-  }
+    const addItem = async (item) => {
+        await window.api.insertRecord(item);
+        await fetchItems()
+    };
 
-  const unpackedItems = items.filter(item => !item.packed);
-  const packedItems = items.filter(item => item.packed);
+    const markAsPacked = async (item) => {
+        await window.api.updatePacked(item)
+        await fetchItems()
+        // const otherItems = items.filter((other) => other.id !== item.id);
+        // const updatedItem = {...item, packed: !item.packed};
+        // setItems([updatedItem, ...otherItems]);
+    };
 
-  return (
-    <div className="Application">
-      <NewItem onSubmit={addItem} />
-      <Items
-        title="Unpacked Items"
-        items={unpackedItems}
-        onCheckOff={markAsPacked}
-      />
-      <Items
-        title="Packed Items"
-        items={packedItems}
-        onCheckOff={markAsPacked}
-      />
-      <button
-        className="button full-width"
-        onClick={markAllAsUnpacked}
-      >
-        Mark All As Unpacked
-      </button>
-    </div>
-  );
-}
+    const markAllAsUnpacked = async () => {
+        await window.api.markAllUnpacked()
+        await fetchItems()
+        // const newItems = items.map((item) => ({...item, packed: false}));
+        // setItems(newItems);
+    };
 
-render(<Application/>, document.getElementById('application'))
+    const deleteItem = async (item) => {
+        await window.api.deleteRecord(item)
+        await fetchItems()
+    }
 
+    const deleteUnpackedItems = async () => {
+        await window.api.deleteUnpacked()
+        await fetchItems()
+    }
+
+    const unpackedItems = items?.filter((item) => !item.packed);
+    const packedItems = items?.filter((item) => item.packed);
+
+    return (
+        <div className="Application">
+            <NewItem onSubmit={addItem}/>
+            <Items
+                title="Unpacked Items"
+                items={unpackedItems}
+                onCheckOff={markAsPacked}
+                onDelete={deleteItem}
+            />
+            <Items
+                title="Packed Items"
+                items={packedItems}
+                onCheckOff={markAsPacked}
+                onDelete={deleteItem}
+            />
+            <button className="button full-width" onClick={markAllAsUnpacked}>
+                Mark All As Unpacked
+            </button>
+            <button
+                className="button full-width secondary"
+                onClick={deleteUnpackedItems}>
+                Remove Unpacked Items
+            </button>
+        </div>
+    );
+};
+
+// render(<Application />, document.getElementById("application"));
+
+const renderApplication = async () => {
+    const root = createRoot(document.getElementById("application"))
+    root.render(
+        <Application/>,
+    );
+};
+renderApplication();

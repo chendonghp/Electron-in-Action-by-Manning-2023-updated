@@ -8,9 +8,9 @@ const NewItem= ({ onSubmit = () => {} }) => {
     setValue(event.target.value);
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    onSubmit({ value, packed: false, id: Date.now() });
+    await onSubmit({ value, packed: false});
     setValue('');
   }
 
