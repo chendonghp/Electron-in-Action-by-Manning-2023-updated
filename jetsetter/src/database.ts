@@ -1,9 +1,18 @@
 import "sqlite3";
+import path from 'path'
+import {app} from "electron";
+
 import knex from "knex";
+
+const userdataPath = path.join(
+    app.getPath('userData'),
+    'jetsetter-items.sqlite')
+console.log(userdataPath)
 const database = knex({
   client: "sqlite3",
   connection: {
-    filename: "./db.sqlite",
+    // filename: "./db.sqlite",
+    filename: userdataPath
   },
   useNullAsDefault: true,
 });
