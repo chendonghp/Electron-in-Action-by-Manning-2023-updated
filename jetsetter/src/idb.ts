@@ -20,28 +20,29 @@ export const idb = {
         const db = await openDB("jetsetter", 1);
         const tx = db.transaction("items", "readwrite");
         tx.objectStore("items").add(item);
-        // return tx.done
+        await tx.done;
     },
     async update(item) {
         const db = await openDB("jetsetter", 1);
         const tx = db.transaction("items", "readwrite");
         tx.objectStore("items").put(item);
+        await tx.done;
     },
     async markAllAsUnpacked() {
         const db = await openDB("jetsetter", 1);
-        await this.getAll()
-            .then((items) => items.map((item) => ({ ...item, packed: false })))
-            .then((items) => {
-                const tx = db.transaction("items", "readwrite");
-                for (const item of items) {
-                    tx.objectStore("items").put(item);
-                }
-            });
+        let items = await this.getAll();
+        items = items.map((item) => ({ ...item, packed: false }));
+        const tx = db.transaction("items", "readwrite");
+        for (const item of items) {
+            tx.objectStore("items").put(item);
+        }
+        await tx.done
     },
     async delete(item) {
         const db = await openDB("jetsetter", 1);
         const tx = db.transaction("items", "readwrite");
         tx.objectStore("items").delete(item.id);
+        await tx.done;
     },
     async deleteUnpackedItems() {
         const db = await openDB("jetsetter", 1);
