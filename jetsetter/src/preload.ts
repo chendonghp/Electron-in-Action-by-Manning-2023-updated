@@ -3,10 +3,10 @@
 import {  contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('api',{
-    getDatabase: () => ipcRenderer.invoke('database'),
-    insertRecord: (record) => ipcRenderer.send('insert-record', record),
-    updatePacked: (record) => ipcRenderer.send('update-packed', record),
-    markAllUnpacked: () => ipcRenderer.send('mark-all-unpacked'),
-    deleteRecord: (record) => ipcRenderer.invoke('delete-record', record),
-    deleteUnpacked: ()=> ipcRenderer.send('delete-unpacked')
+    // getDatabase: () => ipcRenderer.invoke('database'),
+    // insertRecord: (record) => ipcRenderer.send('insert-record', record),
+    // updatePacked: (record) => ipcRenderer.send('update-packed', record),
+    // markAllUnpacked: () => ipcRenderer.send('mark-all-unpacked'),
+    // deleteRecord: (record) => ipcRenderer.invoke('delete-record', record),
+    // deleteUnpacked: ()=> ipcRenderer.send('delete-unpacked'),
 })

@@ -1,49 +1,52 @@
 import React, {useState, useEffect} from "react";
+import {createRoot} from "react-dom/client";
 import Items from "./Items";
 import NewItem from "./NewItem";
-import {createRoot} from "react-dom/client";
-// import {window} from 'electron'
+import {createDatabase, idb} from "../idb";
+import database from "../database";
 
 
 const Application = () => {
     const [items, setItems] = useState([]);
 
-    useEffect(() => {
-        fetchItems();
+    useEffect( () => {
+        createDatabase().then(() => fetchItems());
     }, []);
 
     async function fetchItems() {
-        const database = await window.api.getDatabase()
-        setItems(database);
+        // const database = await window.api.getDatabase()
+        // setItems(database);
+        setItems(await idb.getAll())
     }
 
     const addItem = async (item) => {
-        await window.api.insertRecord(item);
+        // await window.api.insertRecord(item);
+        await idb.add(item)
         await fetchItems()
     };
 
     const markAsPacked = async (item) => {
-        await window.api.updatePacked(item)
+        // await window.api.updatePacked(item)
+        const updatedItem = { ...item, packed: !item.packed };
+        await idb.update(updatedItem)
         await fetchItems()
-        // const otherItems = items.filter((other) => other.id !== item.id);
-        // const updatedItem = {...item, packed: !item.packed};
-        // setItems([updatedItem, ...otherItems]);
     };
 
     const markAllAsUnpacked = async () => {
-        await window.api.markAllUnpacked()
+        // await window.api.markAllUnpacked()
+        await idb.markAllAsUnpacked()
         await fetchItems()
-        // const newItems = items.map((item) => ({...item, packed: false}));
-        // setItems(newItems);
     };
 
     const deleteItem = async (item) => {
-        await window.api.deleteRecord(item)
+        // await window.api.deleteRecord(item)
+        await idb.delete(item)
         await fetchItems()
     }
 
     const deleteUnpackedItems = async () => {
-        await window.api.deleteUnpacked()
+        // await window.api.deleteUnpacked()
+        await idb.deleteUnpackedItems()
         await fetchItems()
     }
 
