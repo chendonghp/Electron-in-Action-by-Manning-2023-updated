@@ -74,7 +74,7 @@ const createWindow = exports.createWindow = () => {
     });
 
     mainWindow.loadFile(path.join(__dirname, "index.html"));
-
+    
     mainWindow.on('closed', () => {
         windows.delete(mainWindow);
         createApplicationMenu();
