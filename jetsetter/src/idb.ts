@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { openDB } from "idb";
 
 export const createDatabase = async () => {

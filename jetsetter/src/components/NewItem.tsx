@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 
 

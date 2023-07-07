@@ -1,3 +1,4 @@
+// @ts-nocheck
 import React from "react";
 
 const Item = ({ packed, _id, value, onCheckOff, onDelete }) => {

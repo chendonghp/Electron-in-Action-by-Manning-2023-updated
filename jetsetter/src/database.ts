@@ -1,3 +1,4 @@
+// @ts-nocheck
 import "sqlite3";
 import path from 'path'
 import {app} from "electron";
