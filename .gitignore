@@ -1,6 +1,7 @@
-node_modules/
+*node_modules/
 .vscode/
 *lock.json
 /test-results/
 /playwright-report/
 /playwright/.cache/
+*build/

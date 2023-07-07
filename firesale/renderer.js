@@ -8,6 +8,7 @@ const saveHtmlButton = document.querySelector("#save-html");
 const showFileButton = document.querySelector("#show-file");
 const openInDefaultButton = document.querySelector("#open-in-default");
 
+
 let filePath = null;
 let originalContent = '';
 

@@ -1,18 +1,20 @@
-const {app, BrowserWindow, dialog, ipcMain, Menu, shell} = require("electron");
+const { app, BrowserWindow, dialog, ipcMain, Menu, shell } = require("electron");
 const fs = require("fs");
 const path = require("path");
 const marked = require("marked");
 const createDOMPurify = require("dompurify");
-const {JSDOM} = require("jsdom");
+const { JSDOM } = require("jsdom");
 const createApplicationMenu = require('./application-menu');
+
+require('./crash-reporter')
 
 
 const getFileFromUser = exports.getFileFromUser = async (win) => {
-    const {canceled, filePaths} = await dialog.showOpenDialog(win, {
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
         properties: ["openFile"],
         filters: [
-            {name: "Markdown Files", extensions: ["md", "markdown"]},
-            {name: "Text Files", extensions: ["txt"]},
+            { name: "Markdown Files", extensions: ["md", "markdown"] },
+            { name: "Text Files", extensions: ["txt"] },
         ],
     });
     if (!canceled) {
@@ -74,7 +76,7 @@ const createWindow = exports.createWindow = () => {
     });
 
     mainWindow.loadFile(path.join(__dirname, "index.html"));
-    
+
     mainWindow.on('closed', () => {
         windows.delete(mainWindow);
         createApplicationMenu();
@@ -104,7 +106,7 @@ const createWindow = exports.createWindow = () => {
     mainWindow.on('focus', () => {
         filename = null;
         mainWindow.webContents.send("get-filename");
-        ipcMain.on('filename', (event, value) => {filename = value})
+        ipcMain.on('filename', (event, value) => { filename = value })
         createApplicationMenu(filename)
     });
     mainWindow.once("ready-to-show", () => {
@@ -120,7 +122,7 @@ const saveHtml = async (win, content) => {
         title: 'Save Html',
         defaultPath: app.getPath('documents'),
         filters: [
-            {name: 'HTML Files', extensions: ['html', 'htm']}
+            { name: 'HTML Files', extensions: ['html', 'htm'] }
         ]
     });
 
@@ -134,7 +136,7 @@ const saveMarkdown = async (win, file, content) => {
             title: 'Save Markdown',
             defaultPath: app.getPath('documents'),
             filters: [
-                {name: 'Markdown Files', extensions: ['md', 'markdown']}
+                { name: 'Markdown Files', extensions: ['md', 'markdown'] }
             ]
         });
 
@@ -148,11 +150,19 @@ const windows = new Set();
 
 app.whenReady().then(() => {
 
+    // setTimeout(() => {
+    //     process.crash()
+    // }, 4000);
+
+    setTimeout(() => {
+        throw new Error("This is an error message");
+    }, 4000);
+
     ipcMain.handle("parse-markdown", (event, markdown) => {
         // refer https://github.com/cure53/DOMPurify
         const window = new JSDOM("").window;
         const DOMPurify = createDOMPurify(window);
-        const options = {mangle: false, headerIds: false};
+        const options = { mangle: false, headerIds: false };
         return DOMPurify.sanitize(marked.parse(markdown, options));
     });
 
@@ -198,8 +208,8 @@ app.whenReady().then(() => {
     createApplicationMenu();
 
     ipcMain.handle('open-file', async (event, file) => {
-            const content = await openFile(win, file);
-            return content;
+        const content = await openFile(win, file);
+        return content;
     })
     ipcMain.on('save-html', (e, content) => {
         saveHtml(win, content)
@@ -263,46 +273,47 @@ const stopWatchingFile = (targetWindow) => {
 };
 
 const createContextMenu = (filePath) => {
-    return  Menu.buildFromTemplate([
-    {
-        label: 'Open File', click() {
-            getFileFromUser();
-        }
-    },
-    {
-        label: 'Show File',
-        accelerator: 'Shift+CommandOrControl+S',
-        enabled: !!filePath,
-        click(item, focusedWindow) {
-            if (!focusedWindow) {
-                return dialog.showErrorBox(
-                    'Cannot Show File\'s Location',
-                    'There is currently no active document show.'
-                );
+    return Menu.buildFromTemplate([
+        {
+            label: 'Open File', click() {
+                getFileFromUser();
             }
-            focusedWindow.webContents.send('show-file');
         },
-    },
-    {
-        label: 'Open in Default Editor',
-        accelerator: 'Shift+CommandOrControl+S',
-        enabled: !!filePath,
-        click(item, focusedWindow) {
-            if (!focusedWindow) {
-                return dialog.showErrorBox(
-                    'Cannot Open File in Default Editor',
-                    'There is currently no active document to open.'
-                );
-            }
-            focusedWindow.webContents.send('open-in-default');
+        {
+            label: 'Show File',
+            accelerator: 'Shift+CommandOrControl+S',
+            enabled: !!filePath,
+            click(item, focusedWindow) {
+                if (!focusedWindow) {
+                    return dialog.showErrorBox(
+                        'Cannot Show File\'s Location',
+                        'There is currently no active document show.'
+                    );
+                }
+                focusedWindow.webContents.send('show-file');
+            },
         },
-    },
-    {type: 'separator'},
-    {label: 'Cut', role: 'cut'},
-    {label: 'Copy', role: 'copy'},
-    {label: 'Paste', role: 'paste'},
-    {label: 'Select All', role: 'selectall'},
-])};
+        {
+            label: 'Open in Default Editor',
+            accelerator: 'Shift+CommandOrControl+S',
+            enabled: !!filePath,
+            click(item, focusedWindow) {
+                if (!focusedWindow) {
+                    return dialog.showErrorBox(
+                        'Cannot Open File in Default Editor',
+                        'There is currently no active document to open.'
+                    );
+                }
+                focusedWindow.webContents.send('open-in-default');
+            },
+        },
+        { type: 'separator' },
+        { label: 'Cut', role: 'cut' },
+        { label: 'Copy', role: 'copy' },
+        { label: 'Paste', role: 'paste' },
+        { label: 'Select All', role: 'selectall' },
+    ])
+};
 
 ipcMain.on('markdown-context-menu', (event, filePath) => {
     markdownContextMenu = createContextMenu(filePath)
